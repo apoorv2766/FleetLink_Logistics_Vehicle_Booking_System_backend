@@ -5,6 +5,7 @@ const Vehicle = require("../src/models/Vehicle");
 const Booking = require("../src/models/Booking");
 const { vehicleSchema, availabilityQuerySchema } = require("../src/validators");
 const { findAvailableVehicles } = require("../src/services/availability");
+// const calculateDuration = require("../utils/calculateDuration")
 
 // POST /api/vehicles
 router.post("/", async (req, res) => {
@@ -23,14 +24,15 @@ router.post("/", async (req, res) => {
 });
 
 function calculateDuration(fromPincode, toPincode) {
-  // Take absolute difference, then modulo 24
+  // take absolute differencethen modulo 24
   const diff = Math.abs(parseInt(toPincode) - parseInt(fromPincode));
-  const hours = diff % 24; // Wrap within 24 hours
-  return hours === 0 ? 1 : hours; // Ensure at least 1 hour
+  // wrap within 24 hours
+  const hours = diff % 24; 
+  return hours === 0 ? 1 : hours; 
 }
 
 
-router.get("/available", async (req, res, next) => {
+router.get("/available", async (req, res) => {
   try {
     // Validate query params
     const { error, value } = availabilityQuerySchema.validate(req.query);
@@ -73,21 +75,20 @@ router.get("/available", async (req, res, next) => {
       if (!conflict) availableVehicles.push(vehicle);
     }
 
-    // Condition 2: No available vehicles after conflict check
+    // no available vehicles after conflict check
     if (!availableVehicles.length) {
       return res.status(400).json({
         message: `All vehicles with at least ${capacityRequired} kg capacity are booked during this time.`,
       });
     }
 
-    // Respond with available vehicles and duration
+    // respond with available vehicles and duration
     return res.status(200).json({
       estimatedRideDurationHours,
       vehicles: availableVehicles,
     });
   } catch (err) {
     console.error(err);
-    next(err);
   }
 });
 

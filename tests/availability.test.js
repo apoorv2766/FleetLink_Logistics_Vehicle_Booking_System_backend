@@ -1,4 +1,3 @@
-// tests/availability.test.js
 const request = require("supertest");
 const { MongoMemoryServer } = require("mongodb-memory-server");
 const mongoose = require("mongoose");
@@ -40,10 +39,10 @@ test("POST /api/vehicles - create and validation", async () => {
 });
 
 test("GET /api/vehicles/available respects overlaps and back-to-back", async () => {
-  // Create a vehicle
+  // create vehicle
   const v = await Vehicle.create({ name: "V1", capacityKg: 1000, tyres: 6 });
 
-  // Create an existing booking from 10:00 to 12:00
+  // create an existing booking from 10:00 to 12:00
   const startExisting = new Date("2025-08-27T10:00:00.000Z");
   const endExisting = new Date("2025-08-27T12:00:00.000Z");
   await Booking.create({
@@ -57,8 +56,8 @@ test("GET /api/vehicles/available respects overlaps and back-to-back", async () 
     status: "confirmed",
   });
 
-  // Request a search that starts exactly at 12:00 (back-to-back) with duration 2 hours.
-  // Choose pincodes so estimate becomes 2 hours: use numbers diff % 24 => diff 2
+  // request a search that starts exactly at 12:00 (back-to-back) with duration 2 hours.
+  // choose pincodes so estimate becomes 2 hours: use numbers diff % 24 => diff 2
   const res = await request(app).get("/api/vehicles/available").query({
     capacityRequired: 500,
     fromPincode: "560102", // parseInt 560102
@@ -66,12 +65,12 @@ test("GET /api/vehicles/available respects overlaps and back-to-back", async () 
     startTime: "2025-08-27T12:00:00.000Z",
   });
 
-  // Since existing.endTime === req.startTime, back-to-back allowed -> vehicle should be available
+  // since existing.endTime === req.startTime, back-to-back allowed -> vehicle should be available
   expect(res.status).toBe(200);
   expect(Array.isArray(res.body)).toBe(true);
   expect(res.body.length).toBe(1);
 
-  // Now request overlapping (starts at 11:00) should exclude the vehicle
+  // now request overlapping (starts at 11:00) should exclude the vehicle
   const res2 = await request(app).get("/api/vehicles/available").query({
     capacityRequired: 500,
     fromPincode: "560102",
@@ -85,7 +84,7 @@ test("GET /api/vehicles/available respects overlaps and back-to-back", async () 
 test("POST /api/bookings - conflict and success", async () => {
   const v = await Vehicle.create({ name: "V2", capacityKg: 2000, tyres: 8 });
 
-  // Create a booking that occupies 10:00-14:00
+  // create a booking that occupies 10:00-14:00
   const existingStart = new Date("2025-08-27T10:00:00.000Z");
   const existingEnd = new Date("2025-08-27T14:00:00.000Z");
   await Booking.create({
@@ -111,7 +110,7 @@ test("POST /api/bookings - conflict and success", async () => {
 
   const vehicleId = vehicleRes.body.id;
 
-  // Try to book overlapping window -> should return 409
+  // try to book overlapping window -> should return 409
   const overlapping = await request(app).post("/api/bookings").send({
     vehicleId: vehicleId,
     startTime: "2025-08-27T10:00:00Z",
@@ -123,7 +122,7 @@ test("POST /api/bookings - conflict and success", async () => {
 
   expect(overlapping.status).toBe(409);
 
-  // Try booking after 14:00 (back-to-back allowed) -> should succeed
+  // try booking after 14:00 (back-to-back allowed) -> should succeed
   const success = await request(app).post("/api/bookings").send({
     vehicleId: v._id.toString(),
     fromPincode: "100000",
